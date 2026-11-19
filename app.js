@@ -37,6 +37,9 @@ function route() {
   document.title = post ? post.title + " · 影像目录" : "影像目录";
   if (!post) { list(); return; }
   el("title").textContent = post.title;
+  el("source-link").href = post.id.startsWith("qlh-")
+    ? "https://www.qinglanhua.com/forum.php?mod=redirect&goto=findpost&pid=" + post.id.slice(4)
+    : "https://www.syhui5.xyz/" + post.id + ".html";
   el("share-link").href = post.downloadUrl || post.shareUrl;
   el("share-link").textContent = post.downloadUrl ? "直接下载 ↗" : "打开百度网盘 ↗";
   el("share-code").textContent = post.extractionCode;
