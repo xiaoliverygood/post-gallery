@@ -37,7 +37,8 @@ function route() {
   document.title = post ? post.title + " · 影像目录" : "影像目录";
   if (!post) { list(); return; }
   el("title").textContent = post.title;
-  el("share-link").href = post.shareUrl;
+  el("share-link").href = post.downloadUrl || post.shareUrl;
+  el("share-link").textContent = post.downloadUrl ? "直接下载 ↗" : "打开百度网盘 ↗";
   el("share-code").textContent = post.extractionCode;
   for (let i = 0; i <= post.count; i++) {
     const label = i ? "第 " + i + " 张" : "主图";
@@ -65,8 +66,11 @@ el("gate").addEventListener("submit", async event => {
       {name:"PBKDF2", salt:bytes(sealed.salt), iterations:600000, hash:"SHA-256"},
       material, {name:"AES-GCM", length:256}, false, ["decrypt"]
     );
-    const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:bytes(sealed.iv)}, key, bytes(sealed.data));
-    posts = JSON.parse(new TextDecoder().decode(plain));
+    const batches = await Promise.all([sealed, ...(sealed.parts || [])].map(async part => {
+      const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:bytes(part.iv)}, key, bytes(part.data));
+      return JSON.parse(new TextDecoder().decode(plain));
+    }));
+    posts = batches.flat();
     el("password").value = "";
     el("gate").hidden = true;
     window.addEventListener("hashchange", route);
